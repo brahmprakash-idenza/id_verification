@@ -1,0 +1,22 @@
+.App {
+  text-align: center;
+  padding: 40px;
+}
+
+.veriff-form {
+  max-width: 300px;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.veriff-form input {
+  padding: 8px;
+  font-size: 14px;
+}
+
+.veriff-form button {
+  padding: 10px;
+  font-size: 16px;
+}
