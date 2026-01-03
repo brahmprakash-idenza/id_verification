@@ -14,39 +14,47 @@ export default function VeriffVerification({
     if (initialized.current) return;
     initialized.current = true;
 
-    async function init() {
-      const res = await fetch("/veriff/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
-          firstName,
-          lastName,
-          email,
-        }),
-      });
+    const veriff = Veriff({
+      apiKey: "f680f797-4076-4e73-9ee4-d54d3a635ac1", // publishable key only
+      parentId: "veriff-root",
 
-      const session = await res.json();
+      onSession: function (err, response) {
+        if (err) {
+          console.error("Veriff error:", err);
+          return;
+        }
 
-      const veriff = Veriff({
-        apiKey: "API_KEY",
-        parentId: "veriff-root",
-        onSession: function (err, response) {
-          // received the response, verification can be started now
-        },
-      });
-      veriff.mount({
-        formLabel: {
-          givenName: "First name",
-          lastName: "Family name",
-          vendorData: "Unique id of an end-user",
-        },
-        submitBtnText: "START YOUR SESSION",
-        loadingText: "Please wait...",
-      });
-    }
+        // 🔑 Start verification (redirect to hosted page)
+        window.location.href = response.verification.url;
 
-    init();
+        // OR (if you want in-context iframe instead of redirect)
+        // window.veriffSDK.createVeriffFrame({
+        //   url: response.verification.url,
+        //   onComplete,
+        // });
+      },
+    });
+
+    // Pass known data to Veriff
+    veriff.setParams({
+      vendorData: userId,
+      person: {
+        givenName: firstName,
+        lastName: lastName,
+        email: email,
+      },
+    });
+
+    // Mount Veriff UI
+    veriff.mount({
+      formLabel: {
+        givenName: "First name",
+        lastName: "Family name",
+        vendorData: "Unique id of an end-user",
+      },
+      submitBtnText: "START YOUR SESSION",
+      loadingText: "Please wait...",
+    });
   }, [userId, firstName, lastName, email, onComplete]);
 
   return <div id="veriff-root" />;
