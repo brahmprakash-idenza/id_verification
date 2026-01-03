@@ -1,61 +1,48 @@
 import { useEffect, useRef } from "react";
 import { Veriff } from "@veriff/js-sdk";
 
-export default function VeriffVerification({
-  userId,
-  firstName,
-  lastName,
-  email,
-  onComplete,
-}) {
+export default function VeriffVerification({ subscriberId, email, firstName, lastName }) {
   const initialized = useRef(false);
 
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
 
+    // 🔑 Pack everything you want back into vendorData
+    const vendorData = JSON.stringify({
+      subscriberId,
+      email,
+      
+    });
+
     const veriff = Veriff({
-      apiKey: "f680f797-4076-4e73-9ee4-d54d3a635ac1", // publishable key only
+      apiKey: 'f680f797-4076-4e73-9ee4-d54d3a635ac1',
       parentId: "veriff-root",
 
-      onSession: function (err, response) {
+      onSession: (err, response) => {
         if (err) {
           console.error("Veriff error:", err);
           return;
         }
-
-        // 🔑 Start verification (redirect to hosted page)
         window.location.href = response.verification.url;
-
-        // OR (if you want in-context iframe instead of redirect)
-        // window.veriffSDK.createVeriffFrame({
-        //   url: response.verification.url,
-        //   onComplete,
-        // });
       },
     });
 
-    // Pass known data to Veriff
+    // 🔴 ONLY vendorData is round-tripped
     veriff.setParams({
-      vendorData: userId,
+      vendorData: vendorData,
       person: {
         givenName: firstName,
         lastName: lastName,
-        email: email,
       },
     });
 
-    // Mount Veriff UI
+    // Names editable
     veriff.mount({
-      formLabel: {
-        givenName: "First name",
-        lastName: "Family name",
-        vendorData: "Unique id of an end-user",
-      },
-      submitBtnText: "START YOUR SESSION",
+      submitBtnText: "🔒 Get verified",
       loadingText: "Please wait...",
     });
-  }, [userId, firstName, lastName, email, onComplete]);
+  }, [subscriberId, email, firstName, lastName]);
 
   return <div id="veriff-root" />;
 }

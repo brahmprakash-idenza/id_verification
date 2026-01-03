@@ -1,18 +1,25 @@
-import "./App.css";
+import { BrowserRouter, Routes, Route, useParams } from "react-router-dom";
 import VeriffVerification from "./components/widgets/VeriffVerification";
 
-function App() {
+function VerifyPage() {
+  const { subscriberId, email, firstName, lastName } = useParams();
+
   return (
-    <div className="App">
-      <VeriffVerification
-        userId={`user_${Date.now()}`}
-        firstName="John"
-        lastName="Doe"
-        email="john@example.com"
-        onComplete={() => alert("Verification submitted")}
-      />
-    </div>
+    <VeriffVerification
+      subscriberId={subscriberId}
+      email={email}
+      firstName={firstName}
+      lastName={lastName}
+    />
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/verify/:subscriberId/:email/:firstName/:lastName" element={<VerifyPage />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}

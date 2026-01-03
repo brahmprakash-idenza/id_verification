@@ -16,7 +16,7 @@ VERIFF_PRIVATE_KEY = "c277b5fe-76e1-4fe8-92e3-0336dde350b5"  # if required by yo
 VERIFF_MASTER_SIGNATURE_KEY = "c277b5fe-76e1-4fe8-92e3-0336dde350b5"
 BASE_URL = "https://b991b57b56d3.ngrok-free.app"  # ngrok or prod
 
-VERIFF_API = "https://stationapi.veriff.com/v1"
+VERIFF_API = "https://api.veriff.me"
 import hmac
 import hashlib
 
@@ -60,6 +60,15 @@ def verify_signature(payload, received_signature):
 # ===============================
 # WEBHOOK (SOURCE OF TRUTH)
 # ===============================
+import os
+import json
+import hmac
+import hashlib
+from flask import request
+
+STORAGE_DIR = "veriff_webhooks"
+os.makedirs(STORAGE_DIR, exist_ok=True)
+
 @app.route("/veriff/webhook", methods=["POST"])
 def veriff_webhook():
     raw_body = request.data
@@ -73,14 +82,29 @@ def veriff_webhook():
         print("❌ Invalid signature")
         return "Invalid signature", 401
 
-    payload = json.loads(raw_body.decode())
-    print("✅ Verified webhook:", payload["verification"]["id"])
+    # Parse payload AFTER verification
+    payload = json.loads(raw_body.decode("utf-8"))
+
+    verification = payload.get("verification", {})
+    verification_id = verification.get("id", "unknown")
+
+    # ✅ Print webhook payload (pretty)
+    print("✅ Verified webhook received")
+    print(json.dumps(payload, indent=2))
+
+    # ✅ Store payload in JSON file
+    file_path = os.path.join(
+        STORAGE_DIR,
+        f"{verification_id}.json"
+    )
+
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2)
+
+    print(f"📁 Webhook stored at: {file_path}")
 
     return "ok", 200
 
-
-
-    return jsonify({"ok": True})
 
 # ===============================
 # FETCH EXTRACTED DATA (OCR ETC.)
