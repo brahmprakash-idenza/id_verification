@@ -1,16 +1,23 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-const POLL_INTERVAL = 3000;        // 3s
-const MAX_DURATION = 180000;       // 3 min
-const SERVER_URL = "https://791fcefa8fc6.ngrok-free.app";
+const POLL_INTERVAL = 3000; // 3s
+const MAX_DURATION = 180000; // 3 min
+const SERVER_URL = "https://localhost:5000";
 export default function VerificationLoading() {
   const navigate = useNavigate();
 
-  const context = JSON.parse(
-    localStorage.getItem("veriff_context") || "{}"
-  );
+  function getVeriffContext() {
+    try {
+      const raw = localStorage.getItem("veriff_context");
+      return raw ? JSON.parse(raw) : {};
+    } catch (err) {
+      console.error("Invalid veriff_context in storage", err);
+      return {};
+    }
+  }
 
+  const context = getVeriffContext();
   const { trackingId } = context;
 
   useEffect(() => {

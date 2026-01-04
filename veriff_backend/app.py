@@ -74,12 +74,6 @@ def veriff_webhook():
         payload
     )
 
-    # Fetch & store extracted verification data
-    verification_data = fetch_verification_data(verification_id)
-    write_json(
-        os.path.join(verification_dir, "verification_data.json"),
-        verification_data
-    )
     vendor_data_raw = verification.get("vendorData")
     tracking_id = None
 
@@ -100,51 +94,10 @@ def veriff_webhook():
             }
         )
 
-
-    # Fetch & store media metadata
-    media_data = fetch_verification_media(verification_id)
-    write_json(
-        os.path.join(verification_dir, "media.json"),
-        media_data
-    )
-
     print(f"📁 Stored verification {verification_id}")
 
     return "ok", 200
 
-# ===============================
-# 📄 FETCH OCR / PERSON / DOCUMENT
-# ===============================
-def fetch_verification_data(verification_id: str) -> dict:
-    headers = {
-        "X-AUTH-CLIENT": VERIFF_PUBLISHABLE_KEY
-    }
-
-    res = requests.get(
-        f"{VERIFF_API}/verifications/{verification_id}",
-        headers=headers,
-        timeout=15
-    )
-    res.raise_for_status()
-
-    return res.json()
-
-# ===============================
-# 🖼️ FETCH MEDIA METADATA
-# ===============================
-def fetch_verification_media(verification_id: str) -> dict:
-    headers = {
-        "X-AUTH-CLIENT": VERIFF_PUBLISHABLE_KEY
-    }
-
-    res = requests.get(
-        f"{VERIFF_API}/media/{verification_id}",
-        headers=headers,
-        timeout=15
-    )
-    res.raise_for_status()
-
-    return res.json()
 
 @app.route("/verification/status", methods=["GET"])
 def verification_status():
@@ -199,6 +152,7 @@ def create_verification():
 
     # Encode ONLY for URL safety
     verify_path = (
+        f"{VERIFICATION_UI_URL}"
         f"/verify/"
         f"{quote(subscriber_id)}/"
         f"{quote(email)}/"
