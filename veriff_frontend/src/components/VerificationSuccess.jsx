@@ -3,7 +3,7 @@ import { useEffect } from "react";
 export default function VerificationSuccess() {
   useEffect(() => {
     const timer = setTimeout(() => {
-      window.location.href = "https://google.com";
+      window.location.href = "https://www.idenza.ai/";
     }, 3000);
 
     return () => clearTimeout(timer);

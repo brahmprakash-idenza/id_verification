@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 const POLL_INTERVAL = 3000;        // 3s
 const MAX_DURATION = 180000;       // 3 min
-
+const SERVER_URL = "https://791fcefa8fc6.ngrok-free.app";
 export default function VerificationLoading() {
   const navigate = useNavigate();
 
@@ -15,7 +15,7 @@ export default function VerificationLoading() {
 
   useEffect(() => {
     if (!trackingId) {
-      navigate("/");
+      navigate("/verification/timeout");
       return;
     }
 
@@ -31,7 +31,7 @@ export default function VerificationLoading() {
         }
 
         const res = await fetch(
-          `/verification/status?trackingId=${trackingId}`
+          `${SERVER_URL}/verification/status?trackingId=${trackingId}`
         );
 
         if (!res.ok) return;
