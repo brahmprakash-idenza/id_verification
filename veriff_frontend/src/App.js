@@ -4,13 +4,6 @@ import VerificationLoading from "./components/VerificationLoading";
 import VerificationSuccess from "./components/VerificationSuccess";
 import VerificationFailure from "./components/VerificationFailure";
 import VerificationTimeout from "./components/VerificationTimeout";
-/**
- * Step 1: Start Veriff
- * Save context → launch Veriff
- */
-import { useEffect } from "react";
-import { useParams } from "react-router-dom";
-import VeriffVerification from "./components/VeriffVerificationHero";
 
 export default function VerifyPage() {
   const {
