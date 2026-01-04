@@ -2,114 +2,120 @@ import os
 import json
 import hmac
 import hashlib
-import datetime
 import requests
-from flask import Flask, request, jsonify
-
+from flask import Flask, request, jsonify # type: ignore
+import uuid
 app = Flask(__name__)
 
 # ===============================
-# 🔑 CONFIG — REPLACE THESE
+# 🔑 CONFIG (MOVE TO ENV LATER)
 # ===============================
 VERIFF_PUBLISHABLE_KEY = "f680f797-4076-4e73-9ee4-d54d3a635ac1"
-VERIFF_PRIVATE_KEY = "c277b5fe-76e1-4fe8-92e3-0336dde350b5"  # if required by your plan
 VERIFF_MASTER_SIGNATURE_KEY = "c277b5fe-76e1-4fe8-92e3-0336dde350b5"
-BASE_URL = "https://b991b57b56d3.ngrok-free.app"  # ngrok or prod
-
+VERIFICATION_UI_URL = "https://veriff-test-rose.vercel.app"
 VERIFF_API = "https://api.veriff.me"
-import hmac
-import hashlib
 
+# ===============================
+# 📁 STORAGE
+# ===============================
+BASE_STORAGE = "veriff_storage"
+os.makedirs(BASE_STORAGE, exist_ok=True)
 
+def ensure_dir(path: str):
+    os.makedirs(path, exist_ok=True)
+
+def write_json(path: str, data: dict):
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
+# ===============================
+# 🔐 HMAC VERIFICATION
+# ===============================
 def verify_veriff_signature(raw_body: bytes, received_signature: str) -> bool:
-    """
-    Veriff HMAC verification
-    """
     if not received_signature:
         return False
 
-    computed_signature = hmac.new(
+    computed = hmac.new(
         VERIFF_MASTER_SIGNATURE_KEY.encode("utf-8"),
         raw_body,
         hashlib.sha256
     ).hexdigest()
 
-    return hmac.compare_digest(computed_signature, received_signature)
+    return hmac.compare_digest(computed, received_signature)
 
 # ===============================
-# STORAGE (TXT FOR NOW)
+# 📡 WEBHOOK (SOURCE OF TRUTH)
 # ===============================
-STORAGE_DIR = "storage"
-os.makedirs(STORAGE_DIR, exist_ok=True)
-
-def write_txt(name, data):
-    with open(os.path.join(STORAGE_DIR, name), "w", encoding="utf-8") as f:
-        f.write(json.dumps(data, indent=2))
-
-# ===============================
-# SIGNATURE VERIFICATION
-# ===============================
-def verify_signature(payload, received_signature):
-    mac = hmac.new(
-        VERIFF_MASTER_SIGNATURE_KEY.encode(),
-        payload,
-        hashlib.sha256
-    ).hexdigest()
-    return hmac.compare_digest(mac, received_signature)
-
-# ===============================
-# WEBHOOK (SOURCE OF TRUTH)
-# ===============================
-import os
-import json
-import hmac
-import hashlib
-from flask import request
-
-STORAGE_DIR = "veriff_webhooks"
-os.makedirs(STORAGE_DIR, exist_ok=True)
-
 @app.route("/veriff/webhook", methods=["POST"])
 def veriff_webhook():
     raw_body = request.data
     received_signature = request.headers.get("X-HMAC-SIGNATURE")
 
-    if not received_signature:
-        print("❌ No signature header")
-        return "Missing signature", 401
-
     if not verify_veriff_signature(raw_body, received_signature):
-        print("❌ Invalid signature")
         return "Invalid signature", 401
 
-    # Parse payload AFTER verification
     payload = json.loads(raw_body.decode("utf-8"))
-
     verification = payload.get("verification", {})
-    verification_id = verification.get("id", "unknown")
+    verification_id = verification.get("id")
 
-    # ✅ Print webhook payload (pretty)
+    if not verification_id:
+        return "Missing verification ID", 400
+
     print("✅ Verified webhook received")
     print(json.dumps(payload, indent=2))
 
-    # ✅ Store payload in JSON file
-    file_path = os.path.join(
-        STORAGE_DIR,
-        f"{verification_id}.json"
+    # Create verification folder
+    verification_dir = os.path.join(BASE_STORAGE, verification_id)
+    ensure_dir(verification_dir)
+
+    # Store decision webhook
+    write_json(
+        os.path.join(verification_dir, "decision.json"),
+        payload
     )
 
-    with open(file_path, "w", encoding="utf-8") as f:
-        json.dump(payload, f, indent=2)
+    # Fetch & store extracted verification data
+    verification_data = fetch_verification_data(verification_id)
+    write_json(
+        os.path.join(verification_dir, "verification_data.json"),
+        verification_data
+    )
+    vendor_data_raw = verification.get("vendorData")
+    tracking_id = None
 
-    print(f"📁 Webhook stored at: {file_path}")
+    if vendor_data_raw:
+        try:
+            vendor_data = json.loads(vendor_data_raw)
+            tracking_id = vendor_data.get("trackingId")
+        except Exception:
+            pass
+        
+    if tracking_id:
+        write_json(
+            os.path.join(BASE_STORAGE, f"tracking_{tracking_id}.json"),
+            {
+                "verification_id": verification_id,
+                "status": verification.get("status"),
+                "updated_at": verification.get("decisionTime")
+            }
+        )
+
+
+    # Fetch & store media metadata
+    media_data = fetch_verification_media(verification_id)
+    write_json(
+        os.path.join(verification_dir, "media.json"),
+        media_data
+    )
+
+    print(f"📁 Stored verification {verification_id}")
 
     return "ok", 200
 
-
 # ===============================
-# FETCH EXTRACTED DATA (OCR ETC.)
+# 📄 FETCH OCR / PERSON / DOCUMENT
 # ===============================
-def fetch_verification_data(verification_id):
+def fetch_verification_data(verification_id: str) -> dict:
     headers = {
         "X-AUTH-CLIENT": VERIFF_PUBLISHABLE_KEY
     }
@@ -117,18 +123,16 @@ def fetch_verification_data(verification_id):
     res = requests.get(
         f"{VERIFF_API}/verifications/{verification_id}",
         headers=headers,
-        timeout=10
+        timeout=15
     )
     res.raise_for_status()
 
-    data = res.json()
-    write_txt(f"{verification_id}_data.txt", data)
-    return data
+    return res.json()
 
 # ===============================
-# FETCH MEDIA (DOCS, SELFIES)
+# 🖼️ FETCH MEDIA METADATA
 # ===============================
-def fetch_verification_media(verification_id):
+def fetch_verification_media(verification_id: str) -> dict:
     headers = {
         "X-AUTH-CLIENT": VERIFF_PUBLISHABLE_KEY
     }
@@ -136,19 +140,97 @@ def fetch_verification_media(verification_id):
     res = requests.get(
         f"{VERIFF_API}/media/{verification_id}",
         headers=headers,
-        timeout=10
+        timeout=15
     )
     res.raise_for_status()
 
-    media = res.json()
-    write_txt(f"{verification_id}_media.txt", media)
-    return media
+    return res.json()
 
+@app.route("/verification/status", methods=["GET"])
+def verification_status():
+    tracking_id = request.args.get("trackingId")
+
+    if not tracking_id:
+        return jsonify({"status": "missing_tracking_id"}), 400
+
+    index_file = os.path.join(
+        BASE_STORAGE,
+        f"tracking_{tracking_id}.json"
+    )
+
+    # Not verified yet
+    if not os.path.exists(index_file):
+        return jsonify({"status": "pending"}), 200
+
+    with open(index_file, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    return jsonify({
+        "status": data.get("status"),
+        "verificationId": data.get("verification_id")
+    }), 200
+
+
+@app.route("/verification/create", methods=["POST"])
+def create_verification():
+    data = request.get_json(force=True)
+
+    subscriber_id = data.get("subscriberId")
+    email = data.get("email")
+    first_name = data.get("firstName")
+    last_name = data.get("lastName")
+
+    if not all([subscriber_id, email, first_name, last_name]):
+        return jsonify({
+            "error": "subscriberId, email, firstName, lastName are required"
+        }), 400
+
+    # 🔑 Generate tracking ID
+    tracking_id = str(uuid.uuid4())
+
+    # Store initial context (acts like Redis for now)
+    context = {
+        "trackingId": tracking_id,
+        "subscriberId": subscriber_id,
+        "email": email,
+        "firstName": first_name,
+        "lastName": last_name,
+        "status": "started"
+    }
+
+    context_path = os.path.join(
+        BASE_STORAGE,
+        f"tracking_{tracking_id}.json"
+    )
+
+    with open(context_path, "w", encoding="utf-8") as f:
+        json.dump(context, f, indent=2)
+
+    # Build frontend URL path
+    verify_path = (
+        f"{VERIFICATION_UI_URL}"
+        f"/verify/"
+        f"{subscriber_id}/"
+        f"{email}/"
+        f"{first_name}/"
+        f"{last_name}/"
+        f"{tracking_id}"
+    )
+
+    return jsonify({
+        "trackingId": tracking_id,
+        "verifyPath": verify_path
+    }), 200
+
+# ===============================
+# 🧪 HEALTH CHECK
+# ===============================
 @app.route("/ping", methods=["GET"])
 def ping():
     return jsonify({"message": "pong"}), 200
+
 # ===============================
-# RUN SERVER
+# 🚀 RUN SERVER
 # ===============================
 if __name__ == "__main__":
     app.run(debug=True)

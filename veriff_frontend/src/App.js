@@ -17,7 +17,7 @@ function VerifyPage() {
     JSON.stringify({
       subscriberId,
       email,
-      trackingId
+      trackingId,
     })
   );
 
@@ -38,25 +38,16 @@ export default function App() {
       <Routes>
         {/* Start verification */}
         <Route
-          path="/verify/:subscriberId/:email/:firstName/:lastName"
+          path="/verify/:subscriberId/:email/:firstName/:lastName/:trackingId"
           element={<VerifyPage />}
         />
 
         {/* After Veriff finishes */}
-        <Route
-          path="/verification/loading"
-          element={<VerificationLoading />}
-        />
+        <Route path="/verification/loading" element={<VerificationLoading />} />
 
         {/* Final states */}
-        <Route
-          path="/verification/success"
-          element={<VerificationSuccess />}
-        />
-        <Route
-          path="/verification/failure"
-          element={<VerificationFailure />}
-        />
+        <Route path="/verification/success" element={<VerificationSuccess />} />
+        <Route path="/verification/failure" element={<VerificationFailure />} />
       </Routes>
     </BrowserRouter>
   );
