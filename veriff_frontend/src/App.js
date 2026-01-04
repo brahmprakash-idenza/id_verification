@@ -5,7 +5,7 @@ import VerificationSuccess from "./components/VerificationSuccess";
 import VerificationFailure from "./components/VerificationFailure";
 import VerificationTimeout from "./components/VerificationTimeout";
 
-export default function VerifyPage() {
+ function VerifyPage() {
   const {
     subscriberId,
     email,
