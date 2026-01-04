@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, useParams } from "react-router-dom";
+import { useEffect } from "react";
 import VeriffVerification from "./components/VeriffVerificationHero";
 import VerificationLoading from "./components/VerificationLoading";
 import VerificationSuccess from "./components/VerificationSuccess";
