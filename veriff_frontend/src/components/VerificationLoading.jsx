@@ -1,6 +1,9 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
+const POLL_INTERVAL = 3000;        // 3s
+const MAX_DURATION = 180000;       // 3 min
+
 export default function VerificationLoading() {
   const navigate = useNavigate();
 
@@ -8,38 +11,60 @@ export default function VerificationLoading() {
     localStorage.getItem("veriff_context") || "{}"
   );
 
-  const { subscriberId } = context;
+  const { trackingId } = context;
 
   useEffect(() => {
-    if (!subscriberId) {
+    if (!trackingId) {
       navigate("/");
       return;
     }
 
+    const startTime = Date.now();
+
     const interval = setInterval(async () => {
-      const res = await fetch(
-        `/verification/status?subscriberId=${subscriberId}`
-      );
-      const data = await res.json();
+      try {
+        // ⏱ Timeout check
+        if (Date.now() - startTime > MAX_DURATION) {
+          clearInterval(interval);
+          navigate("/verification/timeout");
+          return;
+        }
 
-      if (data.status === "approved") {
-        clearInterval(interval);
-        navigate("/verification/success");
-      }
+        const res = await fetch(
+          `/verification/status?trackingId=${trackingId}`
+        );
 
-      if (data.status === "declined") {
-        clearInterval(interval);
-        navigate("/verification/failure");
+        if (!res.ok) return;
+
+        const data = await res.json();
+
+        if (data.status === "approved") {
+          clearInterval(interval);
+          navigate("/verification/success");
+        }
+
+        if (data.status === "declined") {
+          clearInterval(interval);
+          navigate("/verification/failure");
+        }
+        // pending → keep polling
+      } catch (err) {
+        console.error("Polling error:", err);
       }
-    }, 3000);
+    }, POLL_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [subscriberId, navigate]);
+  }, [trackingId, navigate]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white">
       <div className="animate-spin h-10 w-10 border-b-2 border-blue-600 mb-4" />
-      <p>Verifying your identity…</p>
+      <h2 className="text-lg font-medium text-gray-900">
+        Verifying your identity
+      </h2>
+      <p className="mt-1 text-sm text-gray-500">
+        This usually takes less than a minute
+      </p>
     </div>
   );
 }

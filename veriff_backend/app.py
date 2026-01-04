@@ -171,24 +171,20 @@ def verification_status():
     }), 200
 
 
+from urllib.parse import quote
+
 @app.route("/verification/create", methods=["POST"])
 def create_verification():
     data = request.get_json(force=True)
 
-    subscriber_id = data.get("subscriberId")
-    email = data.get("email")
-    first_name = data.get("firstName")
-    last_name = data.get("lastName")
+    subscriber_id = data["subscriberId"]
+    email = data["email"]          # RAW email
+    first_name = data["firstName"]
+    last_name = data["lastName"]
 
-    if not all([subscriber_id, email, first_name, last_name]):
-        return jsonify({
-            "error": "subscriberId, email, firstName, lastName are required"
-        }), 400
-
-    # 🔑 Generate tracking ID
     tracking_id = str(uuid.uuid4())
 
-    # Store initial context (acts like Redis for now)
+    # Store RAW values (source of truth)
     context = {
         "trackingId": tracking_id,
         "subscriberId": subscriber_id,
@@ -198,29 +194,24 @@ def create_verification():
         "status": "started"
     }
 
-    context_path = os.path.join(
-        BASE_STORAGE,
-        f"tracking_{tracking_id}.json"
-    )
-
-    with open(context_path, "w", encoding="utf-8") as f:
+    with open(f"veriff_storage/tracking_{tracking_id}.json", "w") as f:
         json.dump(context, f, indent=2)
 
-    # Build frontend URL path
+    # Encode ONLY for URL safety
     verify_path = (
-        f"{VERIFICATION_UI_URL}"
         f"/verify/"
-        f"{subscriber_id}/"
-        f"{email}/"
-        f"{first_name}/"
-        f"{last_name}/"
+        f"{quote(subscriber_id)}/"
+        f"{quote(email)}/"
+        f"{quote(first_name)}/"
+        f"{quote(last_name)}/"
         f"{tracking_id}"
     )
 
     return jsonify({
         "trackingId": tracking_id,
         "verifyPath": verify_path
-    }), 200
+    })
+
 
 # ===============================
 # 🧪 HEALTH CHECK
