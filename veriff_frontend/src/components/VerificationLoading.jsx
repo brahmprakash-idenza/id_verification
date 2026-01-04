@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-const POLL_INTERVAL = 3000; // 3s
-const MAX_DURATION = 180000; // 3 min
+const POLL_INTERVAL = 3000;
+const MAX_DURATION = 180000;
 const SERVER_URL = "https://72f7e36c787c.ngrok-free.app";
+
 export default function VerificationLoading() {
   const navigate = useNavigate();
 
@@ -11,14 +12,12 @@ export default function VerificationLoading() {
     try {
       const raw = localStorage.getItem("veriff_context");
       return raw ? JSON.parse(raw) : {};
-    } catch (err) {
-      console.error("Invalid veriff_context in storage", err);
+    } catch {
       return {};
     }
   }
 
-  const context = getVeriffContext();
-  const { trackingId } = context;
+  const { trackingId } = getVeriffContext();
 
   useEffect(() => {
     if (!trackingId) {
@@ -30,7 +29,6 @@ export default function VerificationLoading() {
 
     const interval = setInterval(async () => {
       try {
-        // ⏱ Timeout check
         if (Date.now() - startTime > MAX_DURATION) {
           clearInterval(interval);
           navigate("/verification/timeout");
@@ -41,9 +39,23 @@ export default function VerificationLoading() {
           `${SERVER_URL}/verification/status?trackingId=${trackingId}`
         );
 
+        console.log(
+          "Polling response:",
+          res.status,
+          res.headers.get("content-type")
+        );
+
         if (!res.ok) return;
 
-        const data = await res.json();
+        const text = await res.text();
+
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          console.error("❌ Non-JSON response:", text);
+          return;
+        }
 
         if (data.status === "approved") {
           clearInterval(interval);
@@ -54,7 +66,6 @@ export default function VerificationLoading() {
           clearInterval(interval);
           navigate("/verification/failure");
         }
-        // pending → keep polling
       } catch (err) {
         console.error("Polling error:", err);
       }
