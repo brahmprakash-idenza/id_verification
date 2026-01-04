@@ -144,6 +144,9 @@ def fetch_verification_media(verification_id):
     write_txt(f"{verification_id}_media.txt", media)
     return media
 
+@app.route("/", methods=["GET"])
+def ping():
+    return "pong"
 # ===============================
 # RUN SERVER
 # ===============================
