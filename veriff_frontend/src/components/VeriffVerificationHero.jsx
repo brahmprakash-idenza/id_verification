@@ -1,12 +1,13 @@
 import { useEffect, useRef } from "react";
 import { Veriff } from "@veriff/js-sdk";
-import Logo from "../../assets/logo.svg";
+import Logo from "../assets/logo.svg";
 
 export default function VeriffVerification({
   subscriberId,
   email,
   firstName,
   lastName,
+  trackingId
 }) {
   const initialized = useRef(false);
 
@@ -18,6 +19,7 @@ export default function VeriffVerification({
     const vendorData = JSON.stringify({
       subscriberId,
       email,
+      trackingId
     });
 
     const veriff = Veriff({
