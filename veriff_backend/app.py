@@ -144,9 +144,9 @@ def fetch_verification_media(verification_id):
     write_txt(f"{verification_id}_media.txt", media)
     return media
 
-@app.route("/", methods=["GET"])
+@app.route("/ping", methods=["GET"])
 def ping():
-    return "pong"
+    return jsonify({"message": "pong"}), 200
 # ===============================
 # RUN SERVER
 # ===============================
