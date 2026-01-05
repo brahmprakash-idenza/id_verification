@@ -6,13 +6,13 @@ import requests
 from flask import Flask, request, jsonify # type: ignore
 import uuid
 app = Flask(__name__)
-from flask_cors import CORS
+from flask_cors import CORS # type: ignore
 
 app = Flask(__name__)
 
 CORS(app, resources={
     r"/verification/*": {
-        "origins": ["https://veriff-test-rose.vercel.app"]
+        "origins": ["https://veriff-test-delta.vercel.app"]
     }
 })
 
@@ -21,7 +21,7 @@ CORS(app, resources={
 # ===============================
 VERIFF_PUBLISHABLE_KEY = "f680f797-4076-4e73-9ee4-d54d3a635ac1"
 VERIFF_MASTER_SIGNATURE_KEY = "c277b5fe-76e1-4fe8-92e3-0336dde350b5"
-VERIFICATION_UI_URL = "https://veriff-test-rose.vercel.app"
+VERIFICATION_UI_URL = "https://veriff-test-delta.vercel.app"
 VERIFF_API = "https://api.veriff.me"
 
 # ===============================

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 const POLL_INTERVAL = 3000;
 const MAX_DURATION = 180000;
-const SERVER_URL = "http://localhost:5000";
+const SERVER_URL = "https://fd60f8b9b8e0.ngrok-free.app";
 
 export default function VerificationLoading() {
   const navigate = useNavigate();
