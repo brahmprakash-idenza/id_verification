@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const SERVER_URL = "http://localhost:5000"
+const SERVER_URL = "https://veriff-test-jdu7.vercel.app"
 export default function CreateVerification() {
   const [form, setForm] = useState({
     subscriberId: "",
