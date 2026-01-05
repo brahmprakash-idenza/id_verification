@@ -6,6 +6,15 @@ import requests
 from flask import Flask, request, jsonify # type: ignore
 import uuid
 app = Flask(__name__)
+from flask_cors import CORS
+
+app = Flask(__name__)
+
+CORS(app, resources={
+    r"/verification/*": {
+        "origins": ["https://veriff-test-rose.vercel.app"]
+    }
+})
 
 # ===============================
 # 🔑 CONFIG (MOVE TO ENV LATER)
