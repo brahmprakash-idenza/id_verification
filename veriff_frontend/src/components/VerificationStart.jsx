@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+const SERVER_URL = "http://localhost:5000"
 export default function CreateVerification() {
   const [form, setForm] = useState({
     subscriberId: "",
@@ -24,7 +25,7 @@ export default function CreateVerification() {
     setLoading(true);
 
     try {
-      const res = await fetch("/verification/create", {
+      const res = await fetch(`${SERVER_URL}/verification/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
