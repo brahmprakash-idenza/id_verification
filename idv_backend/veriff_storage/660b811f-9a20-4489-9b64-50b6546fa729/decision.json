@@ -1,0 +1,41 @@
+{
+  "status": "success",
+  "verification": {
+    "acceptanceTime": "2026-01-05T14:52:01.481212Z",
+    "submissionTime": "2026-01-05T14:53:01.087450Z",
+    "decisionTime": "2026-01-05T15:20:53.107584Z",
+    "code": 9102,
+    "id": "660b811f-9a20-4489-9b64-50b6546fa729",
+    "vendorData": "{\"subscriberId\":\"1\",\"email\":\"sagnik@example.com\",\"trackingId\":\"8b05ef0c-f344-4d7c-a5c8-d8578487bb21\"}",
+    "endUserId": null,
+    "status": "declined",
+    "reason": "Person showing the document does not appear to match document photo",
+    "reasonCode": 103,
+    "person": {
+      "firstName": "Sagnik",
+      "lastName": "Das",
+      "citizenship": null,
+      "idNumber": null,
+      "gender": null,
+      "dateOfBirth": null,
+      "yearOfBirth": null,
+      "placeOfBirth": null,
+      "nationality": null,
+      "pepSanctionMatch": null
+    },
+    "document": {
+      "number": null,
+      "type": "ID_CARD",
+      "country": "IN",
+      "validFrom": null,
+      "validUntil": null,
+      "state": null
+    },
+    "comments": [],
+    "additionalVerifiedData": {},
+    "attemptId": "aa3df4e0-c47a-408d-8f04-cd5f7656ba84"
+  },
+  "technicalData": {
+    "ip": "103.43.82.180"
+  }
+}

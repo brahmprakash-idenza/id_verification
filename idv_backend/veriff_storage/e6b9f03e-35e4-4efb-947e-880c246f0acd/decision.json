@@ -1,0 +1,41 @@
+{
+  "status": "success",
+  "verification": {
+    "acceptanceTime": "2026-01-05T15:16:40.215321Z",
+    "submissionTime": "2026-01-05T15:17:22.844384Z",
+    "decisionTime": "2026-01-05T15:19:36.548161Z",
+    "code": 9001,
+    "id": "e6b9f03e-35e4-4efb-947e-880c246f0acd",
+    "vendorData": "{\"subscriberId\":\"1\",\"email\":\"sagnik@example.com\",\"trackingId\":\"d1cf673b-3da4-4132-8120-d69af68500c8\"}",
+    "endUserId": null,
+    "status": "approved",
+    "reason": null,
+    "reasonCode": null,
+    "person": {
+      "firstName": "Sagnik",
+      "lastName": "Das",
+      "citizenship": null,
+      "idNumber": null,
+      "gender": null,
+      "dateOfBirth": null,
+      "yearOfBirth": null,
+      "placeOfBirth": null,
+      "nationality": null,
+      "pepSanctionMatch": null
+    },
+    "document": {
+      "number": null,
+      "type": "ID_CARD",
+      "country": "IN",
+      "validFrom": null,
+      "validUntil": null,
+      "state": null
+    },
+    "comments": [],
+    "additionalVerifiedData": {},
+    "attemptId": "ef9b6af5-7c53-4eab-8a9c-28ceed0f5617"
+  },
+  "technicalData": {
+    "ip": "103.43.82.180"
+  }
+}
