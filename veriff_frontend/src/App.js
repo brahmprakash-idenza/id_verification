@@ -6,6 +6,7 @@ import VerificationSuccess from "./components/VerificationSuccess";
 import VerificationFailure from "./components/VerificationFailure";
 import VerificationTimeout from "./components/VerificationTimeout";
 import VerificationStart from "./components/VerificationStart";
+
  function VerifyPage() {
   const {
     subscriberId,
@@ -55,7 +56,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<CreateVerification />} />
+        <Route path="/" element={<VerificationStart />} />
         {/* Veriff verification */}
         <Route path="/verify/:subscriberId/:email/:firstName/:lastName/:trackingId" element={<VerifyPage />} />
 
