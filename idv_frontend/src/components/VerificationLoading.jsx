@@ -36,7 +36,7 @@ export default function VerificationLoading() {
         }
 
         const res = await fetch(
-          `${SERVER_URL}/verification/status?trackingId=${trackingId}&ngrok-skip-browser-warning=1`
+          `${SERVER_URL}/idv/verification/status?trackingId=${trackingId}&ngrok-skip-browser-warning=1`
         );
 
         console.log(
@@ -47,13 +47,20 @@ export default function VerificationLoading() {
 
         if (!res.ok) return;
 
-        const text = await res.text();
-
         let data;
+
+        const contentType = res.headers.get("content-type") || "";
+
         try {
-          data = JSON.parse(text);
-        } catch {
-          console.error("❌ Non-JSON response:", text);
+          if (contentType.includes("application/json")) {
+            data = await res.json();
+          } else {
+            const text = await res.text();
+            console.error("❌ Non-JSON response:", text);
+            return;
+          }
+        } catch (err) {
+          console.error("❌ Failed to parse response:", err);
           return;
         }
 
@@ -64,7 +71,12 @@ export default function VerificationLoading() {
 
         if (data.status === "declined") {
           clearInterval(interval);
-          navigate("/verification/failure");
+          navigate("/verification/failure", {
+            state: {
+              reason: data.reason,
+              reasonCode: data.reasonCode,
+            },
+          });
         }
       } catch (err) {
         console.error("Polling error:", err);

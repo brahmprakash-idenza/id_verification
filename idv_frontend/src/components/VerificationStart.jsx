@@ -25,7 +25,7 @@ export default function CreateVerification() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${SERVER_URL}/verification/create`, {
+      const res = await fetch(`${SERVER_URL}/idv/verification/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
