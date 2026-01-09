@@ -36,7 +36,7 @@ export default function VerificationLoading() {
         }
 
         const res = await fetch(
-          `${SERVER_URL}/idv/verification/status?trackingId=${trackingId}&ngrok-skip-browser-warning=1`
+          `${SERVER_URL}/idv/verification/status?trackingId=${trackingId}`
         );
 
         console.log(
