@@ -1,5 +1,5 @@
 import { useState } from "react";
-
+import nux_game_logo from "../assets/nux_game_logo.png";
 const SERVER_URL = "https://seahorse-app-yej58.ondigitalocean.app";
 export default function CreateVerification() {
   const [form, setForm] = useState({
@@ -50,13 +50,21 @@ export default function CreateVerification() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-[#e8e5f4]">
       <div className="w-full max-w-md space-y-6">
         {/* Header */}
         <div className="text-center space-y-1">
           <h1 className="text-2xl font-semibold text-gray-900">
             Start verification (Demo)
           </h1>
+          {/* Logo */}
+          <div className="flex items-center justify-center bg-[#e8e5f4]">
+            <img
+              src={nux_game_logo}
+              alt="Company logo"
+              className="h-40 mb-10"
+            />
+          </div>
 
           <p className="text-sm text-gray-500">
             This page is for testing only. In production, verification is
