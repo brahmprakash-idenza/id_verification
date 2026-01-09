@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const SERVER_URL = "https://seahorse-app-yej58.ondigitalocean.app";
+const SERVER_URL = "http://localhost:8000";
 export default function CreateVerification() {
   const [form, setForm] = useState({
     subscriberId: "1",

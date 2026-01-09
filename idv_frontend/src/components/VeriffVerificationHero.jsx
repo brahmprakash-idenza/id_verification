@@ -23,7 +23,7 @@ export default function VeriffVerification({
     });
 
     const veriff = Veriff({
-      apiKey: "8d6eed06-0d55-451a-82fa-362c2357cca3",
+      apiKey: "c0d719f5-a8c7-437c-89c0-81a7fdf3935d",
       parentId: "veriff-root",
 
       onSession: (err, response) => {

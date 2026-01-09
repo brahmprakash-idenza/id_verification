@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 const POLL_INTERVAL = 3000;
 const MAX_DURATION = 180000;
-const SERVER_URL = "https://seahorse-app-yej58.ondigitalocean.app";
+const SERVER_URL = "http://localhost:8000";
 
 export default function VerificationLoading() {
   const navigate = useNavigate();
