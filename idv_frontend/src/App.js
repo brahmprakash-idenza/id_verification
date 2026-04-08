@@ -7,7 +7,7 @@ import VerificationFailure from "./components/VerificationFailure";
 import VerificationTimeout from "./components/VerificationTimeout";
 import VerificationStart from "./components/VerificationStart";
 
- function VerifyPage() {
+function VerifyPage() {
   const {
     subscriberId,
     email,
@@ -16,30 +16,31 @@ import VerificationStart from "./components/VerificationStart";
     trackingId,
   } = useParams();
 
-  // 🔓 Decode URL-encoded params
-  const decodedEmail = decodeURIComponent(email);
+  const decodedEmail     = decodeURIComponent(email);
   const decodedFirstName = decodeURIComponent(firstName);
-  const decodedLastName = decodeURIComponent(lastName);
+  const decodedLastName  = decodeURIComponent(lastName);
 
-  // 💾 Persist context ONCE for later screens
   useEffect(() => {
+    // ✅ Read existing context first so we don't lose veriffUrl
+    let existing = {};
+    try {
+      const raw = localStorage.getItem("veriff_context");
+      if (raw) existing = JSON.parse(raw);
+    } catch (_) {}
+
+    // Merge URL params into existing context — preserves veriffUrl
     localStorage.setItem(
       "veriff_context",
       JSON.stringify({
+        ...existing,              // ← keeps veriffUrl from CreateVerification
         subscriberId,
-        email: decodedEmail,     // RAW email
+        email:     decodedEmail,
         firstName: decodedFirstName,
-        lastName: decodedLastName,
+        lastName:  decodedLastName,
         trackingId,
       })
     );
-  }, [
-    subscriberId,
-    decodedEmail,
-    decodedFirstName,
-    decodedLastName,
-    trackingId,
-  ]);
+  }, [subscriberId, decodedEmail, decodedFirstName, decodedLastName, trackingId]);
 
   return (
     <VeriffVerification
@@ -57,16 +58,14 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<VerificationStart />} />
-        {/* Veriff verification */}
-        <Route path="/verify/:subscriberId/:email/:firstName/:lastName/:trackingId" element={<VerifyPage />} />
-
-        {/* After Veriff finishes */}
+        <Route
+          path="/verify/:subscriberId/:email/:firstName/:lastName/:trackingId"
+          element={<VerifyPage />}
+        />
         <Route path="/verification/loading" element={<VerificationLoading />} />
-
-        {/* Final states */}
-        <Route path="/verification/success" element={<VerificationSuccess />} />
-        <Route path="/verification/failure" element={<VerificationFailure />} />
-        <Route path="/verification/timeout" element={<VerificationTimeout />} />
+        <Route path="/verification/success"  element={<VerificationSuccess />} />
+        <Route path="/verification/failure"  element={<VerificationFailure />} />
+        <Route path="/verification/timeout"  element={<VerificationTimeout />} />
       </Routes>
     </BrowserRouter>
   );
