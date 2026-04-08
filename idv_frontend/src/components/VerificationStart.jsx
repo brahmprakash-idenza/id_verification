@@ -5,7 +5,7 @@ const SERVER_URL = process.env.REACT_APP_SERVER_URL;
 
 export default function CreateVerification() {
   const [form, setForm] = useState({
-    subscriberId: "1",   // set dynamically from auth context in production
+    subscriberId: "1",   // replace with auth context value in production
     email: "",
     firstName: "",
     lastName: "",
@@ -25,12 +25,30 @@ export default function CreateVerification() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
+
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || "Failed to create verification");
       }
+
       const data = await res.json();
+
+      // Store veriffUrl so VeriffVerification can redirect without another API call
+      localStorage.setItem(
+        "veriff_context",
+        JSON.stringify({
+          subscriberId: form.subscriberId,
+          email:        form.email,
+          firstName:    form.firstName,
+          lastName:     form.lastName,
+          trackingId:   data.trackingId,
+          veriffUrl:    data.veriffUrl,   // ← store Veriff session URL
+        })
+      );
+
+      // Redirect to the confirmation screen
       window.location.href = data.verifyPath;
+
     } catch (err) {
       console.error(err);
       setError("Something went wrong. Please try again.");
@@ -89,7 +107,6 @@ export default function CreateVerification() {
         <div className="flex flex-col gap-4">
           <div className="bg-white rounded-2xl p-8" style={{ border: "0.5px solid rgba(15,37,68,0.1)" }}>
 
-            {/* Step badge */}
             <div
               className="inline-flex items-center gap-2 rounded-full mb-5"
               style={{ background: "#e0f2ec", padding: "3px 12px 3px 3px" }}

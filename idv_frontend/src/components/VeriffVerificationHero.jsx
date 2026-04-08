@@ -1,8 +1,5 @@
-import { useState, useRef } from "react";
-// import { Veriff } from "@veriff/js-sdk";   // SDK kept but flow replaced with direct API
+import { useState } from "react";
 import idenza_logo from "../assets/idenza_logo.png";
-
-const SERVER_URL = process.env.REACT_APP_SERVER_URL;
 
 export default function VeriffVerification({
   subscriberId, email, firstName, lastName, trackingId,
@@ -10,55 +7,26 @@ export default function VeriffVerification({
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
 
-  // ─── SDK approach (commented — requires Enterprise white-label to hide Veriff branding) ───
-  //
-  // useEffect(() => {
-  //   if (initialized.current) return;
-  //   initialized.current = true;
-  //
-  //   const veriff = Veriff({
-  //     apiKey: process.env.REACT_APP_VERIFF_API_KEY,   // ⚠️ exposes key in browser
-  //     parentId: "veriff-root",
-  //     onSession: (err, response) => {
-  //       if (err) { console.error("Veriff error:", err); return; }
-  //       window.location.href = response.verification.url;
-  //     },
-  //   });
-  //
-  //   veriff.setParams({
-  //     vendorData: JSON.stringify({ subscriberId, email, trackingId }),
-  //     person: { givenName: firstName, lastName: lastName },
-  //   });
-  //
-  //   // Passing all params hides input fields — only the button renders
-  //   veriff.mount({ submitBtnText: "🔒 Start verification", loadingText: "Please wait..." });
-  // }, [subscriberId, email, firstName, lastName, trackingId]);
-  // ──────────────────────────────────────────────────────────────────────────────────────────
-
-  const handleVerification = async () => {
+  const handleVerification = () => {
     setError("");
     setLoading(true);
     try {
-      // Session is created server-side so the API key + HMAC secret never touch the browser
-      const res = await fetch(`${SERVER_URL}/idv/verification/session`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subscriberId, email, firstName, lastName, trackingId }),
-      });
+      // Read veriffUrl stored by CreateVerification when the session was created
+      const raw = localStorage.getItem("veriff_context");
+      const ctx = raw ? JSON.parse(raw) : {};
 
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || "Failed to create verification session");
+      if (!ctx.veriffUrl) {
+        throw new Error("Veriff session URL not found. Please restart the verification.");
       }
 
-      const { url } = await res.json();
-      window.location.href = url;
+      // Navigate to Veriff — no extra API call needed
+      window.location.href = ctx.veriffUrl;
+
     } catch (err) {
       console.error(err);
-      setError("Something went wrong. Please try again.");
+      setError(err.message || "Something went wrong. Please try again.");
       setLoading(false);
     }
-    // Don't setLoading(false) on success — page is navigating away
   };
 
   const initials = `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase();
@@ -109,7 +77,6 @@ export default function VeriffVerification({
         <div className="flex flex-col gap-4">
           <div className="bg-white rounded-2xl p-8" style={{ border: "0.5px solid rgba(15,37,68,0.1)" }}>
 
-            {/* Step badge */}
             <div
               className="inline-flex items-center gap-2 rounded-full mb-5"
               style={{ background: "#e6f1fb", padding: "3px 12px 3px 3px" }}
@@ -129,7 +96,6 @@ export default function VeriffVerification({
               Verifying as
             </p>
 
-            {/* User avatar + name/email */}
             <div className="flex items-center gap-3 mb-3">
               <div
                 className="rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0"
@@ -147,11 +113,10 @@ export default function VeriffVerification({
 
             <div style={{ height: "0.5px", background: "rgba(15,37,68,0.08)", margin: "12px 0" }} />
 
-            {/* Metadata rows */}
             <div className="flex flex-col mb-5" style={{ gap: 2 }}>
               {[
                 ["Subscriber Name", "Idenza"],
-                ["Session type",  "Document + Selfie"],
+                ["Session type",    "Document + Selfie"],
               ].map(([key, val]) => (
                 <div
                   key={key}
@@ -163,9 +128,6 @@ export default function VeriffVerification({
                 </div>
               ))}
             </div>
-
-            {/* SDK mount target (unused while SDK is commented out) */}
-            {/* <div id="veriff-root" /> */}
 
             {error && (
               <p className="text-xs mb-3" style={{ color: "#dc2626" }}>{error}</p>
