@@ -1,94 +1,210 @@
-import { useEffect, useRef } from "react";
-import { Veriff } from "@veriff/js-sdk";
-import Logo from "../assets/logo.svg";
+import { useState, useRef } from "react";
+// import { Veriff } from "@veriff/js-sdk";   // SDK kept but flow replaced with direct API
+import idenza_logo from "../assets/idenza_logo.png";
+
+const SERVER_URL = process.env.REACT_APP_SERVER_URL;
 
 export default function VeriffVerification({
-  subscriberId,
-  email,
-  firstName,
-  lastName,
-  trackingId
+  subscriberId, email, firstName, lastName, trackingId,
 }) {
-  const initialized = useRef(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState("");
 
-  useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
+  // ─── SDK approach (commented — requires Enterprise white-label to hide Veriff branding) ───
+  //
+  // useEffect(() => {
+  //   if (initialized.current) return;
+  //   initialized.current = true;
+  //
+  //   const veriff = Veriff({
+  //     apiKey: process.env.REACT_APP_VERIFF_API_KEY,   // ⚠️ exposes key in browser
+  //     parentId: "veriff-root",
+  //     onSession: (err, response) => {
+  //       if (err) { console.error("Veriff error:", err); return; }
+  //       window.location.href = response.verification.url;
+  //     },
+  //   });
+  //
+  //   veriff.setParams({
+  //     vendorData: JSON.stringify({ subscriberId, email, trackingId }),
+  //     person: { givenName: firstName, lastName: lastName },
+  //   });
+  //
+  //   // Passing all params hides input fields — only the button renders
+  //   veriff.mount({ submitBtnText: "🔒 Start verification", loadingText: "Please wait..." });
+  // }, [subscriberId, email, firstName, lastName, trackingId]);
+  // ──────────────────────────────────────────────────────────────────────────────────────────
 
-    // 🔑 Pack everything you want back into vendorData
-    const vendorData = JSON.stringify({
-      subscriberId,
-      email,
-      trackingId
-    });
+  const handleVerification = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      // Session is created server-side so the API key + HMAC secret never touch the browser
+      const res = await fetch(`${SERVER_URL}/idv/verification/session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subscriberId, email, firstName, lastName, trackingId }),
+      });
 
-    const veriff = Veriff({
-      apiKey: "c0d719f5-a8c7-437c-89c0-81a7fdf3935d",
-      parentId: "veriff-root",
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to create verification session");
+      }
 
-      onSession: (err, response) => {
-        if (err) {
-          console.error("Veriff error:", err);
-          return;
-        }
-        window.location.href = response.verification.url;
-      },
-    });
+      const { url } = await res.json();
+      window.location.href = url;
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong. Please try again.");
+      setLoading(false);
+    }
+    // Don't setLoading(false) on success — page is navigating away
+  };
 
-    // 🔴 ONLY vendorData is round-tripped
-    veriff.setParams({
-      vendorData: vendorData,
-      person: {
-        givenName: firstName,
-        lastName: lastName,
-      },
-    });
+  const initials = `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase();
 
-    // Names editable
-    veriff.mount({
-      submitBtnText: "🔒 Get verified",
-      loadingText: "Please wait...",
-    });
-  }, [subscriberId, email, firstName, lastName]);
+  return (
+    <section
+      className="min-h-screen flex items-center justify-center p-10"
+      style={{ background: "linear-gradient(145deg,#f0f4f9 0%,#e8eef5 50%,#f0f4f9 100%)" }}
+    >
+      <div className="bg-white rounded-2xl p-11 w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
 
-   return (
-    <section className="min-h-screen bg-gr flex items-center justify-center">
-      <div className="h-full max-w-6xl px-6 bg-slate-100" >
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center ">
+        {/* Left — branding & instructions */}
+        <div className="relative overflow-hidden">
+          <div className="w-13 h-13 rounded-xl flex mb-4">
+            <img src={idenza_logo} alt="Idenza" className="h-16" />
+          </div>
+          <h1
+            className="text-4xl leading-tight mb-4"
+            style={{ fontFamily: "'DM Serif Display', serif", color: "#0f2544" }}
+          >
+            Identity Verification
+          </h1>
+          <p className="text-base mb-6" style={{ color: "#5a6a80", lineHeight: 1.65, maxWidth: 340 }}>
+            You're almost there. Review your details and start the identity check.
+          </p>
+          <ul className="space-y-3">
+            {[
+              "Takes less than 2 minutes",
+              "Have your government-issued ID ready",
+              "Ensure your camera is working",
+            ].map((s, i) => (
+              <li key={i} className="flex items-start gap-3">
+                <div
+                  className="flex-shrink-0 rounded-lg flex items-center justify-center"
+                  style={{ width: 28, height: 28, background: "#e0f2ec" }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0d6e5a" strokeWidth="2" strokeLinecap="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                <p className="text-sm pt-1" style={{ color: "#5a6a80" }}>{s}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
 
-          {/* Left content */}
-          <div className="bg-white p-8 mt-10 mb-10 rounded-2xl">
-            {/* Logo */}
-            <img
-              src={Logo}
-              alt="Company logo"
-              className="h-20 mb-10"
-            />
+        {/* Right — confirmation & verification trigger */}
+        <div className="flex flex-col gap-4">
+          <div className="bg-white rounded-2xl p-8" style={{ border: "0.5px solid rgba(15,37,68,0.1)" }}>
 
-            <h1 className="text-4xl font-semibold text-gray-900 leading-tight">
-              Identity verification
-            </h1>
+            {/* Step badge */}
+            <div
+              className="inline-flex items-center gap-2 rounded-full mb-5"
+              style={{ background: "#e6f1fb", padding: "3px 12px 3px 3px" }}
+            >
+              <div
+                className="rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0"
+                style={{ width: 22, height: 22, background: "#185FA5", fontSize: 10 }}
+              >
+                2
+              </div>
+              <span className="text-xs font-medium" style={{ color: "#0C447C" }}>
+                Step 2 of 2 — Confirm &amp; verify
+              </span>
+            </div>
 
-            <p className="mt-4 text-lg text-gray-600 max-w-md">
-              Secure identity checks to protect your account and meet compliance
-              requirements.
+            <p className="text-xs font-medium tracking-widest uppercase mb-3" style={{ color: "#8c9db0" }}>
+              Verifying as
             </p>
 
-            <ul className="mt-6 space-y-2 text-sm text-gray-500">
-              <li>• Takes less than 2 minutes</li>
-              <li>• Keep your govt ID with you</li>
-              <li>• Please check if your camera is working</li>
-            </ul>
-          </div>
-
-          {/* Right card */}
-          <div className="flex justify-center">
-            <div className="w-full max-w-md rounded-2xl bg-white p-8">
-              <div id="veriff-root" style={{scale: "1.1"}}/>
+            {/* User avatar + name/email */}
+            <div className="flex items-center gap-3 mb-3">
+              <div
+                className="rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0"
+                style={{ width: 42, height: 42, background: "#e6f1fb", color: "#185FA5" }}
+              >
+                {initials}
+              </div>
+              <div>
+                <p className="text-sm font-medium" style={{ color: "#0f2544" }}>
+                  {firstName} {lastName}
+                </p>
+                <p className="text-xs" style={{ color: "#8c9db0" }}>{email}</p>
+              </div>
             </div>
+
+            <div style={{ height: "0.5px", background: "rgba(15,37,68,0.08)", margin: "12px 0" }} />
+
+            {/* Metadata rows */}
+            <div className="flex flex-col mb-5" style={{ gap: 2 }}>
+              {[
+                ["Subscriber Name", "Idenza"],
+                ["Session type",  "Document + Selfie"],
+              ].map(([key, val]) => (
+                <div
+                  key={key}
+                  className="flex justify-between items-center py-2"
+                  style={{ borderBottom: "0.5px solid rgba(15,37,68,0.07)" }}
+                >
+                  <span className="text-xs" style={{ color: "#8c9db0" }}>{key}</span>
+                  <span className="text-xs font-medium" style={{ color: "#0f2544" }}>{val}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* SDK mount target (unused while SDK is commented out) */}
+            {/* <div id="veriff-root" /> */}
+
+            {error && (
+              <p className="text-xs mb-3" style={{ color: "#dc2626" }}>{error}</p>
+            )}
+
+            <button
+              onClick={handleVerification}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-medium text-white transition-all disabled:opacity-55"
+              style={{ background: "#0C447C" }}
+              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = "#185FA5"; }}
+              onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = "#0C447C"; }}
+            >
+              {!loading && (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              )}
+              {loading ? "Starting…" : "Start verification"}
+            </button>
           </div>
 
+          {/* Security note */}
+          <div
+            className="rounded-2xl p-5 flex gap-3"
+            style={{ background: "#f8fafc", border: "0.5px solid rgba(15,37,68,0.1)" }}
+          >
+            <svg className="flex-shrink-0 mt-0.5" width="16" height="16" viewBox="0 0 24 24"
+              fill="none" stroke="#0d6e5a" strokeWidth="2" strokeLinecap="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+            <p className="text-xs" style={{ color: "#5a6a80", lineHeight: 1.6 }}>
+              <strong style={{ color: "#0f2544", fontWeight: 500 }}>Your data is safe.</strong>{" "}
+              All personal information is encrypted in transit and processed only for identity verification.
+            </p>
+          </div>
         </div>
+
       </div>
     </section>
   );

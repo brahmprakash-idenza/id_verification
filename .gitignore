@@ -4,7 +4,9 @@
 /idv_frontend/node_modules
 /.pnp
 .pnp.js
-/idv_backend/.venv
+/idv_backend/venv
+/idv_backend/veriff_storage
+.env
 # testing
 /coverage
 

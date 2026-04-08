@@ -3,7 +3,18 @@ import { useNavigate } from "react-router-dom";
 
 const POLL_INTERVAL = 3000;
 const MAX_DURATION = 180000;
-const SERVER_URL = "https://seahorse-app-yej58.ondigitalocean.app";
+const SERVER_URL = process.env.REACT_APP_SERVER_URL;
+
+// Veriff terminal statuses that map to success
+const APPROVED_STATUSES = new Set(["approved"]);
+
+// Veriff terminal statuses that map to failure
+const DECLINED_STATUSES = new Set([
+  "declined",
+  "resubmission_requested",
+  "abandoned",
+  "expired",
+]);
 
 export default function VerificationLoading() {
   const navigate = useNavigate();
@@ -29,6 +40,7 @@ export default function VerificationLoading() {
 
     const interval = setInterval(async () => {
       try {
+        // ── Timeout guard ───────────────────────────────────────────────────
         if (Date.now() - startTime > MAX_DURATION) {
           clearInterval(interval);
           navigate("/verification/timeout");
@@ -48,7 +60,6 @@ export default function VerificationLoading() {
         if (!res.ok) return;
 
         let data;
-
         const contentType = res.headers.get("content-type") || "";
 
         try {
@@ -64,20 +75,34 @@ export default function VerificationLoading() {
           return;
         }
 
-        if (data.status === "approved") {
+        const { status } = data;
+
+        // ✅ FIX: Log every intermediate status so stalls are visible in devtools
+        console.log("⏳ Verification status:", status);
+
+        // ── Terminal: success ───────────────────────────────────────────────
+        if (APPROVED_STATUSES.has(status)) {
           clearInterval(interval);
           navigate("/verification/success");
+          return;
         }
 
-        if (data.status === "declined") {
+        // ── Terminal: failure ───────────────────────────────────────────────
+        if (DECLINED_STATUSES.has(status)) {
           clearInterval(interval);
           navigate("/verification/failure", {
             state: {
-              reason: data.reason,
+              reason:     data.reason,
               reasonCode: data.reasonCode,
             },
           });
+          return;
         }
+
+        // ── Non-terminal statuses: keep polling ─────────────────────────────
+        // "started", "submitted", "processing", "session_created", "pending", etc.
+        // Nothing to do — the interval will fire again in POLL_INTERVAL ms.
+
       } catch (err) {
         console.error("Polling error:", err);
       }
@@ -88,7 +113,7 @@ export default function VerificationLoading() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white">
-      <div className="animate-spin h-10 w-10 border-b-2 border-blue-600 mb-4" />
+      <div className="animate-spin h-10 w-10 border-4 border-gray-200 border-b-blue-600 rounded-full mb-4" />
       <h2 className="text-lg font-medium text-gray-900">
         Verifying your identity
       </h2>
